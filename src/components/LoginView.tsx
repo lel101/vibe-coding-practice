@@ -52,7 +52,7 @@ export default function LoginView({ onLoginSuccess }: LoginViewProps) {
           <div className="inline-flex p-3 rounded-xl bg-emerald-500/10 text-emerald-400 mb-4 border border-emerald-500/20">
             <Building2 className="w-8 h-8" />
           </div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">Business Hub Portal</h2>
+          <h2 className="text-2xl font-bold text-white tracking-tight">Business Hub Portal Test Update</h2>
           <p className="text-slate-400 text-sm mt-1">Inventory, Sales & Profit Distribution</p>
         </div>
 
