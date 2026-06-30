@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { 
-  User, Category, Product, Supplier, Purchase, PurchaseItem, 
-  Sale, SaleItem, Expense, Investor, ProfitDistribution, ProfitDistributionItem 
+import {
+  User, Category, Product, Supplier, Purchase, PurchaseItem,
+  Sale, SaleItem, Expense, Investor, ProfitDistribution, ProfitDistributionItem
 } from '../src/types';
 
 interface DatabaseSchema {
@@ -26,7 +26,7 @@ const DB_FILE = path.join(DB_DIR, 'db.json');
 // Initial seed data
 const initialData = (): DatabaseSchema => {
   const now = new Date().toISOString();
-  
+
   const categories: Category[] = [
     { id: 'cat-1', name: 'Electronics', description: 'Gadgets, devices, and accessories', createdAt: now },
     { id: 'cat-2', name: 'Office Supplies', description: 'Stationery, furniture, and tools', createdAt: now },
@@ -159,7 +159,7 @@ const initialData = (): DatabaseSchema => {
     { id: 'exp-1', date: '2026-05-01', category: 'Rent', description: 'Office and warehouse rental May 2026', amount: 300.00, createdAt: '2026-05-01T00:00:00Z' },
     { id: 'exp-2', date: '2026-05-15', category: 'Electricity', description: 'Utility power bill May', amount: 45.50, createdAt: '2026-05-15T00:00:00Z' },
     { id: 'exp-3', date: '2026-05-25', category: 'Salary', description: 'Part-time warehouse assistant salary', amount: 200.00, createdAt: '2026-05-25T00:00:00Z' },
-    
+
     { id: 'exp-4', date: '2026-06-01', category: 'Rent', description: 'Office and warehouse rental June 2026', amount: 300.00, createdAt: '2026-06-01T00:00:00Z' },
     { id: 'exp-5', date: '2026-06-12', category: 'Electricity', description: 'Utility power bill June', amount: 52.30, createdAt: '2026-06-12T00:00:00Z' },
     { id: 'exp-6', date: '2026-06-25', category: 'Salary', description: 'Part-time helper wages', amount: 200.00, createdAt: '2026-06-25T00:00:00Z' },
@@ -218,32 +218,49 @@ const initialData = (): DatabaseSchema => {
 // Database wrapper
 export class DbManager {
   private static lock = false;
+  private static memoryDb: DatabaseSchema | null = null;
 
   private static read(): DatabaseSchema {
-    if (!fs.existsSync(DB_DIR)) {
-      fs.mkdirSync(DB_DIR, { recursive: true });
+    if (this.memoryDb) {
+      return this.memoryDb;
     }
-    if (!fs.existsSync(DB_FILE)) {
-      const data = initialData();
-      fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
-      return data;
-    }
+
     try {
+      if (!fs.existsSync(DB_DIR)) {
+        fs.mkdirSync(DB_DIR, { recursive: true });
+      }
+      if (!fs.existsSync(DB_FILE)) {
+        const data = initialData();
+        try {
+          fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+        } catch (writeErr) {
+          console.warn('Unable to write initial database to disk (possibly read-only filesystem). Using in-memory fallback.', writeErr);
+        }
+        this.memoryDb = data;
+        return data;
+      }
       const content = fs.readFileSync(DB_FILE, 'utf-8');
-      return JSON.parse(content);
+      const data = JSON.parse(content);
+      this.memoryDb = data;
+      return data;
     } catch (e) {
-      console.error('Error reading DB, restoring default data', e);
+      console.warn('Error reading DB disk file or filesystem is read-only. Falling back to in-memory seed data.', e);
       const data = initialData();
-      fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+      this.memoryDb = data;
       return data;
     }
   }
 
   private static write(data: DatabaseSchema): void {
-    if (!fs.existsSync(DB_DIR)) {
-      fs.mkdirSync(DB_DIR, { recursive: true });
+    this.memoryDb = data;
+    try {
+      if (!fs.existsSync(DB_DIR)) {
+        fs.mkdirSync(DB_DIR, { recursive: true });
+      }
+      fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    } catch (err) {
+      console.warn('Disk write failed (expected on serverless hosts like Vercel). Operating in-memory.', err);
     }
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
   }
 
   // Generic methods
