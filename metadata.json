@@ -1,0 +1,6 @@
+{
+  "name": "Business Inventory & Profit System",
+  "description": "A comprehensive system for tracking inventory, products, categories, suppliers, sales, expenses, investors, and automated monthly profit distribution with full report generation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
